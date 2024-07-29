@@ -13,19 +13,23 @@ const WEBHOOK_URL =
 /**
  * Generates a link token to be used by the client
  */
-router.post("/generate_link_token", async (req, res, next) => {
+router.post("/api/create_link_token", async (req, res, next) => {
   try {
     const userId = getLoggedInUserId(req);
     const userObject = { client_user_id: userId };
     const tokenResponse = await plaidClient.linkTokenCreate({
       user: userObject,
       products: ["transactions"],
-      client_name: "Where'd My Money Go?",
+      client_name: "iOS Video Demo",
       language: "en",
       country_codes: ["US"],
       webhook: WEBHOOK_URL,
+      redirect_uri: "https://babkabudget.com/plaid/test",
     });
-    res.json(tokenResponse.data);
+   // res.json(tokenResponse.data);
+   const data = createTokenResponse.data;
+   console.log("createTokenResponse", data);
+    res.json({ expiration: data.expiration, linkToken: data.link_token });
   } catch (error) {
     console.log(`Running into an error!`);
     next(error);
