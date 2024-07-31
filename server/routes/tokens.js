@@ -2,36 +2,51 @@ const express = require("express");
 const escape = require("escape-html");
 const { getLoggedInUserId } = require("../utils");
 const db = require("../db");
-const { plaidClient } = require("../plaid");
+const { plaidClient } = require(".././plaid");
 const { syncTransactions } = require("./transactions");
-
+const {getUserRecord, updateUserRecord}  = require(".././user_utils");
+const {
+  FIELD_ACCESS_TOKEN,
+  FIELD_USER_ID,
+  FIELD_USER_STATUS,
+  FIELD_ITEM_ID,
+} = require(".././constants");
 const router = express.Router();
 
 const WEBHOOK_URL =
   process.env.WEBHOOK_URL || "https://www.example.com/server/receive_webhook";
 
-/**
- * Generates a link token to be used by the client
- */
-router.post("/api/create_link_token", async (req, res, next) => {
+
+router.post("/create_link_token", async (req, res, next) => {
   try {
-    const userId = getLoggedInUserId(req);
-    const userObject = { client_user_id: userId };
-    const tokenResponse = await plaidClient.linkTokenCreate({
-      user: userObject,
-      products: ["transactions"],
+    
+    // Part 1
+
+    const currentUser = await getUserRecord();
+    const userId = currentUser[FIELD_USER_ID];
+    const createTokenResponse = await plaidClient.linkTokenCreate({
+      user: {
+        client_user_id: userId,
+      },
       client_name: "iOS Video Demo",
-      language: "en",
       country_codes: ["US"],
-      webhook: WEBHOOK_URL,
+      language: "en",
+      products: ["auth"],
+      webhook: "https://sample-webhook-uri.com", 
       redirect_uri: "https://babkabudget.com/plaid/test",
+      //this is where you put your server endpointk theres a tutorial on this
     });
-   // res.json(tokenResponse.data);
-   const data = createTokenResponse.data;
-   console.log("createTokenResponse", data);
+    const data = createTokenResponse.data;
+    console.log("createTokenResponse", data);
     res.json({ expiration: data.expiration, linkToken: data.link_token });
+    
   } catch (error) {
-    console.log(`Running into an error!`);
+    console.log(
+      "Running into an error! Note that if you have an error when creating a " +
+        "link token, it's frequently because you have the wrong client_id " +
+        "or secret for the environment, or you forgot to copy over your " +
+        ".env.template file to.env."
+    );
     next(error);
   }
 });

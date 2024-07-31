@@ -19,6 +19,8 @@ const APP_PORT = process.env.APP_PORT || 8000;
 const express = require('express');
 const app = express();
 app.use(express.json());
+
+//THIS CONFIG NEEDS TO BE REMOVED, ITS ALREADY IN THE PLAID FILE
 const { Configuration, PlaidApi, PlaidEnvironments } = require('plaid');
 const configuration = new Configuration({
   basePath: PlaidEnvironments.sandbox,
@@ -74,43 +76,6 @@ app.get("/server/get_user_info", async (req, res, next) => {
       userStatus: currentUser["userStatus"],
     });
   } catch (error) {
-    next(error);
-  }
-});
-
-
-app.post("/api/create_link_token", async (req, res, next) => {
-  try {
-    
-    // Part 1
-
-    const currentUser = await getUserRecord();
-    const userId = currentUser[FIELD_USER_ID];
-    const createTokenResponse = await client.linkTokenCreate({
-      user: {
-        client_user_id: userId,
-      },
-      client_name: "iOS Video Demo",
-      country_codes: ["US"],
-      language: "en",
-      products: ["auth"],
-      webhook: "https://sample-webhook-uri.com", 
-      redirect_uri: "https://babkabudget.com/plaid/test",
-      //this is where you put your server endpointk theres a tutorial on this
-    });
-    const data = createTokenResponse.data;
-    console.log("createTokenResponse", data);
-  
-    
-    res.json({ expiration: data.expiration, linkToken: data.link_token });
-    
-  } catch (error) {
-    console.log(
-      "Running into an error! Note that if you have an error when creating a " +
-        "link token, it's frequently because you have the wrong client_id " +
-        "or secret for the environment, or you forgot to copy over your " +
-        ".env.template file to.env."
-    );
     next(error);
   }
 });
