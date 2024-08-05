@@ -66,7 +66,7 @@ router.post("/swap_public_token", async (req, res, next) => {
     });
     const tokenData = result.data;
     console.log("publicTokenExchange data", tokenData);
-    
+    const userId = 1
 
     
     const updateData = {};

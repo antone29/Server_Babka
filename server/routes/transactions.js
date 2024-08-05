@@ -16,12 +16,17 @@ const router = express.Router();
  */
  router.post("/sync", async (req, res, next) => {
   try {
-    const userId = getLoggedInUserId(req);
+   // const userId = getLoggedInUserId(req);
+    const userId = 1
+    console.log(userId)
     const items = await db.getItemIdsForUser(userId);
+    console.log("here are the results");
    console.log(items);
     const fullResults = await Promise.all(
       items.map(async (item) => await syncTransactions(item.id))
     );
+   
+    console.log(fullResults)
     res.json({ completeResults: fullResults });
   } catch (error) {
     console.log(`Running into an error!`);
