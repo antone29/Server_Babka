@@ -2,7 +2,7 @@ require("dotenv").config();
 // const express = require("express");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
-const { getUserRecord, updateUserRecord } = require("./user_utils");
+const { getUserRecord, updateUserRecord } = require("../user_utils");
 const {
   FIELD_ACCESS_TOKEN,
   FIELD_USER_ID,

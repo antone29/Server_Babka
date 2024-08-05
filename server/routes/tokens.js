@@ -4,7 +4,7 @@ const { getLoggedInUserId } = require("../utils");
 const db = require("../db");
 const { plaidClient } = require(".././plaid");
 const { syncTransactions } = require("./transactions");
-const {getUserRecord, updateUserRecord}  = require(".././user_utils");
+const {getUserRecord, updateUserRecord}  = require("../../user_utils");
 const {
   FIELD_ACCESS_TOKEN,
   FIELD_USER_ID,
@@ -55,15 +55,27 @@ router.post("/create_link_token", async (req, res, next) => {
  * Exchanges a public token for an access token. Then, fetches a bunch of
  * information about that item and stores it in our database
  */
-router.post("/exchange_public_token", async (req, res, next) => {
-  try {
-    const userId = getLoggedInUserId(req);
-    const publicToken = escape(req.body.publicToken);
 
-    const tokenResponse = await plaidClient.itemPublicTokenExchange({
-      public_token: publicToken,
+router.post("/swap_public_token", async (req, res, next) => {
+  try {
+    
+    // Part 1
+
+    const result = await plaidClient.itemPublicTokenExchange({
+      public_token: req.body.public_token,
     });
-    const tokenData = tokenResponse.data;
+    const tokenData = result.data;
+    console.log("publicTokenExchange data", tokenData);
+    
+
+    
+    const updateData = {};
+    updateData[FIELD_ACCESS_TOKEN] = tokenData.access_token;
+    updateData[FIELD_ITEM_ID] = tokenData.item_id;
+    updateData[FIELD_USER_STATUS] = "connected";
+    await updateUserRecord(updateData);
+    console.log("publicTokenExchange data", tokenData);
+
     await db.addItem(tokenData.item_id, userId, tokenData.access_token);
     await populateBankName(tokenData.item_id, tokenData.access_token);
     await populateAccountNames(tokenData.access_token);
@@ -77,9 +89,43 @@ router.post("/exchange_public_token", async (req, res, next) => {
     // console.log(`Here's some info about the account holders:`);
     // console.dir(identityResult.data, { depth: null, colors: true });
 
-    res.json({ status: "success" }); 
+    res.json({ success: true });
+   
   } catch (error) {
-    console.log(`Running into an error!`);
+    next(error);
+  }
+});
+
+router.get("/simple_auth", async (req, res, next) => {
+  try {
+    
+    // Part 1
+
+    const currentUser = await getUserRecord();
+    const accessToken = currentUser[FIELD_ACCESS_TOKEN];
+    const authResponse = await plaidClient.authGet({
+      access_token: accessToken,
+    });
+
+    console.dir(authResponse.data, { depth: null });
+    
+//would not want to show this on client side
+    
+    const accountMask = authResponse.data.accounts[0].mask;
+    const accountName = authResponse.data.accounts[0].name;
+    const accountId = authResponse.data.accounts[0].account_id;
+
+    // Since I don't know if these arrays are in the same order, make sure we're
+    // fetching the right one by account_id
+    
+    const routingNumber = authResponse.data.numbers.ach.find(
+      (e) => e.account_id === accountId
+    ).routing;
+    res.json({ routingNumber, accountMask, accountName });
+    return;
+    
+
+  } catch (error) {
     next(error);
   }
 });

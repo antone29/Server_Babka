@@ -10,9 +10,9 @@ const {
   FIELD_USER_ID,
   FIELD_USER_STATUS,
   FIELD_ITEM_ID,
-} = require("./constants");
+} = require("./server/constants");
 
-const USER_FILES_FOLDER = "user_files";
+const USER_FILES_FOLDER = "server/user_files";
 const CURR_USER_ID = process.env.USER_ID || "1";
 
 /**
